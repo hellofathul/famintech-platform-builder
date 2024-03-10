@@ -11,7 +11,6 @@ stack_env = pulumi.get_stack()
 # Defaults
 stack_full_name = f"{stack_key}-{stack_env}"
 
-# Initialize Platform with VPC creation enabled, using stack_full_name as the name
 famintech_platform_builder = Platform(stack_full_name, {
     "platform": {
         "VPC": True  # Set to True to enable VPC creation

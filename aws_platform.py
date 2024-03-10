@@ -7,7 +7,8 @@ class Platform:
         self.name = name
         self.config = config
         self.platform = {}
-        self.numberOfZones = 2
+        self.zone1 = "ap-southeast-1a"
+        self.zone2 = "ap-southeast-1b"
 
         if self.config.get("platform", {}).get("VPC", False):
             # Create a VPC
@@ -31,47 +32,59 @@ class Platform:
                 },
             )
 
-            # Fetch available availability zones
-            available_zones = aws.get_availability_zones(filters=[aws.GetAvailabilityZonesFilterArgs(
-                name="opt-in-status",
-                values=["opt-in-not-required"],
-            )])
+            # Create public and private subnets in each specified availability zone
+            # Public Subnet in Zone 1
+            public_subnet_zone1 = ec2.Subnet(
+                f"{self.name}-public-{self.zone1}",
+                vpc_id=vpc.id,
+                cidr_block="10.100.0.0/24",
+                availability_zone=self.zone1,
+                map_public_ip_on_launch=True,
+                tags={
+                    "Name": f"{self.name}-public-{self.zone1}",
+                },
+                opts=pulumi.ResourceOptions(depends_on=[vpc])
+            )
 
-            # Assuming self.numberOfZones is defined somewhere in your class
-            zones = [zone for zone in available_zones.names][:self.numberOfZones]
+            # Private Subnet in Zone 1
+            private_subnet_zone1 = ec2.Subnet(
+                f"{self.name}-private-{self.zone1}",
+                vpc_id=vpc.id,
+                cidr_block="10.100.1.0/24",
+                availability_zone=self.zone1,
+                map_public_ip_on_launch=False,
+                tags={
+                    "Name": f"{self.name}-private-{self.zone1}",
+                },
+                opts=pulumi.ResourceOptions(depends_on=[vpc])
+            )
 
-            # Create subnets in the specified number of availability zones
-            for i, zone in enumerate(zones):
-                # Public subnet
-                public_subnet = ec2.Subnet(
-                    f"{self.name}-public-{zone}",
-                    vpc_id=vpc.id,
-                    cidr_block=f"10.100.{i*2}.0/24",
-                    availability_zone=zone,
-                    map_public_ip_on_launch=True,
-                    tags={
-                        "Name": f"{self.name}-public-{zone}",
-                    },
-                    opts=pulumi.ResourceOptions(depends_on=[vpc])
-                )
+            # Public Subnet in Zone 2
+            public_subnet_zone2 = ec2.Subnet(
+                f"{self.name}-public-{self.zone2}",
+                vpc_id=vpc.id,
+                cidr_block="10.100.2.0/24",
+                availability_zone=self.zone2,
+                map_public_ip_on_launch=True,
+                tags={
+                    "Name": f"{self.name}-public-{self.zone2}",
+                },
+                opts=pulumi.ResourceOptions(depends_on=[vpc])
+            )
 
-                # Private subnet
-                private_subnet = ec2.Subnet(
-                    f"{self.name}-private-{zone}",
-                    vpc_id=vpc.id,
-                    cidr_block=f"10.100.{i*2+1}.0/24",
-                    availability_zone=zone,
-                    map_public_ip_on_launch=False,
-                    tags={
-                        "Name": f"{self.name}-private-{zone}",
-                    },
-                    opts=pulumi.ResourceOptions(depends_on=[vpc])
-                )
+            # Private Subnet in Zone 2
+            private_subnet_zone2 = ec2.Subnet(
+                f"{self.name}-private-{self.zone2}",
+                vpc_id=vpc.id,
+                cidr_block="10.100.3.0/24",
+                availability_zone=self.zone2,
+                map_public_ip_on_launch=False,
+                tags={
+                    "Name": f"{self.name}-private-{self.zone2}",
+                },
+                opts=pulumi.ResourceOptions(depends_on=[vpc])
+            )
 
-                # Export the subnet IDs within the loop
-                pulumi.export(f"{zone}_public_subnet_id", public_subnet.id)
-                pulumi.export(f"{zone}_private_subnet_id", private_subnet.id)
-            
             # Create Security Groups
             app_sg = ec2.SecurityGroup(
                 f"{self.name}-app-sg",
@@ -147,7 +160,7 @@ class Platform:
             # Replace `public_subnet_id` with the actual variable or method that retrieves your public subnet ID
             nat_gateway = aws.ec2.NatGateway(
                 f"{self.name}-nat-gateway",
-                subnet_id=public_subnet.id,  # Use the ID of the public subnet
+                subnet_id=public_subnet_zone1.id,  # Use the ID of the public subnet
                 allocation_id=eip.id,
                 tags={
                     "Name": f"{self.name}-nat-gateway",
@@ -155,14 +168,18 @@ class Platform:
                 opts=pulumi.ResourceOptions(depends_on=[vpc, eip])  # Ensure NAT Gateway depends on VPC and EIP
             )
 
-        # Store references to the created resources
-            self.platform["vpc"] = vpc
-            self.platform["app_sg"] = app_sg
-            self.platform["igw"] = igw
-            self.platform[f"{zone}_public_subnet"] = public_subnet
-            self.platform[f"{zone}_private_subnet"] = private_subnet
-            self.platform["eip"] = eip
-            self.platform["nat_gateway"] = nat_gateway
+            # Store references to the created resources
+            self.platform = {
+                "vpc": vpc,
+                "app_sg": app_sg,
+                "igw": igw,
+                "eip": eip,
+                "nat_gateway": nat_gateway,
+                "public_subnet_zone1": public_subnet_zone1,
+                "private_subnet_zone1": private_subnet_zone1,
+                "public_subnet_zone2": public_subnet_zone2,
+                "private_subnet_zone2": private_subnet_zone2
+            }
 
             # Export the VPC and Security Group IDs
             pulumi.export("vpc_id", vpc.id)
@@ -170,6 +187,14 @@ class Platform:
             pulumi.export("igw_id", igw.id)
             pulumi.export("eip_id", eip.id)
             pulumi.export("nat_gateway_id", nat_gateway.id)
+            pulumi.export(f"{self.name}-public-{self.zone1}", public_subnet_zone1.id)
+            pulumi.export(f"{self.name}-private-{self.zone1}", private_subnet_zone1.id)
+            pulumi.export(f"{self.name}-public-{self.zone2}", public_subnet_zone2.id)
+            pulumi.export(f"{self.name}-private-{self.zone2}", private_subnet_zone2.id)
+
+
+
+
    
 
            
