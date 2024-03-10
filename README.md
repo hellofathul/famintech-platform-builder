@@ -5,6 +5,6 @@
 
 <div align="center">
 
-**An IaC tool based on Pulumi for building your AWS Infra.**
+**An IaC tool based on Pulumi**
 
 </div>
