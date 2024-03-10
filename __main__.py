@@ -1,5 +1,4 @@
 import pulumi
-import boto3
 import pulumi_aws as aws
 from aws_platform import Platform  # Import the Platform class from platform.py
 
