@@ -14,7 +14,7 @@
 ## **🚧 Project roadmap**
 
 - **Current features:**
-  - [:ballot_box_with_check:] Pal Deletion
+  - :ballot_box_with_check: Pal Deletion
   - [ ] Stat Editing (Hero Statue)
   - [ ] Edit Pals Nickname
   - [ ] Improve Pal ListBox UI to mimic ingame PalBox
