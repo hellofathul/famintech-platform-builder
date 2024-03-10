@@ -14,6 +14,5 @@
 ## **🚧 Project roadmap**
 
 - **Current features:**
-  :ballot_box_with_check: Pal Deletion
-
+  - :ballot_box_with_check: Create VPC 
 
