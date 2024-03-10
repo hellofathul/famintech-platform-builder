@@ -14,5 +14,11 @@
 ## **🚧 Project roadmap**
 
 - **Current features:**
-  - :ballot_box_with_check: Create VPC 
+  - :ballot_box_with_check: Provision VPC 
+
+- **Planned features:**
+  - [ ] Provision EKS
+  - [ ] Provision ECS
+  - [ ] Provision Jenkins server
+
 
